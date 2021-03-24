@@ -11,6 +11,8 @@ import enum
 from pybullet_utils import bullet_client as bc
 import logging
 
+import gym_soccerbot
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,12 +201,16 @@ class WalkingForward(gym.Env):
             # load soccerbot
             # p.loadURDF("/home/shahryar/catkin_ws/src/soccer_ws/soccer_description/models/soccerbot_stl.urdf",
             # p.loadURDF("/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf",
-            self.soccerbotUid = p.loadURDF("/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf",
+            # "/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf",
+            urdfBotPath = gym_soccerbot.getDataPath()
+            self.soccerbotUid = p.loadURDF(os.path.join(urdfBotPath, "soccer_description/models/soccerbot_stl.urdf"),
                                            useFixedBase=False,
                                            useMaximalCoordinates=False,
                                            basePosition=[0, 0, self.STANDING_HEIGHT],
                                            baseOrientation=[0., 0., 0., 1.],
-                                           flags=pb.URDF_USE_INERTIA_FROM_FILE | pb.URDF_USE_MATERIAL_COLORS_FROM_MTL | pb.URDF_USE_SELF_COLLISION)
+                                           flags=pb.URDF_USE_INERTIA_FROM_FILE
+                                                 | pb.URDF_USE_MATERIAL_COLORS_FROM_MTL
+                                                 | pb.URDF_USE_SELF_COLLISION)
                             # |p.URDF_USE_SELF_COLLISION|p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
 
             urdfRootPath = pybullet_data.getDataPath()
