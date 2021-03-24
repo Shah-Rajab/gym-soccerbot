@@ -65,17 +65,13 @@ class WalkingForward(gym.Env):
 
     def __init__(self, renders=False):
         # start the bullet physics server
-        print("here!!!!!")
-        print(renders)
-        if renders:
-            print("RENDER MODE")
         self._renders = renders
         self._render_height = 200
         self._render_width = 320
         self._physics_client_id = -1
 
         self.prev_lin_vel = np.array([0, 0, 0])
-        self.STANDING_HEIGHT = 0.36
+        self.STANDING_HEIGHT = 0.31
         self.goal_xy = [5, 5]
 
         # TODO Change action space
@@ -112,13 +108,22 @@ class WalkingForward(gym.Env):
 
     def _imu(self):
         p = self._p
-        [lin_vel, ang_vel] = p.getLinkState(bodyUniqueId=self.soccerbotUid, linkIndex=Links.IMU, computeLinkVelocity=1)[6:8]
+        [quart_link, lin_vel, ang_vel] = p.getLinkState(bodyUniqueId=self.soccerbotUid, linkIndex=Links.IMU, computeLinkVelocity=1)[5:8]
+        # [lin_vel, ang_vel] = p.getLinkState(bodyUniqueId=self.soccerbotUid, linkIndex=Links.HEAD_1, computeLinkVelocity=1)[6:8]
+        # print(p.getLinkStates(bodyUniqueId=self.soccerbotUid, linkIndices=range(0,18,1), computeLinkVelocity=1))
+        # lin_vel = [0, 0, 0]
+        # ang_vel = [0, 0, 0]
         #p.getBaseVelocity(self.soccerbotUid)
         lin_vel = np.array(lin_vel, dtype = np.float32)
+        self.gravity = [0, 0, -9.81]
         lin_acc = (lin_vel - self.prev_lin_vel) / self.timeStep
+        lin_acc -= self.gravity
+        rot_mat = np.array(pb.getMatrixFromQuaternion(quart_link), dtype=np.float32).reshape((3,3))
+        lin_acc = np.matmul(rot_mat, lin_acc)
         ang_vel = np.array(ang_vel, dtype=np.float32)
         self.prev_lin_vel = lin_vel
-        #print(f'lin_acc = {lin_vel}', end="\t\t")
+        #print(f'lin_acc = {lin_acc}', end="\t\t")
+        print(f'lin_acc = {lin_acc}')
         #print(f'ang_vel = {ang_vel}')
         #return np.concatenate((lin_acc, ang_vel))
         return np.concatenate((lin_vel, ang_vel))
@@ -181,7 +186,7 @@ class WalkingForward(gym.Env):
         if self._physics_client_id < 0:
             if self._renders:
                 self._p = bc.BulletClient(connection_mode=pb.GUI)
-                #self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
+                # self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
             else:
                 self._p = bc.BulletClient()
                 self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
@@ -192,19 +197,27 @@ class WalkingForward(gym.Env):
             # load ramp
 
             # load soccerbot
-            self.soccerbotUid = p.loadURDF("/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf", useFixedBase=False,
-                                            basePosition=[0, 0, self.STANDING_HEIGHT],
-                                            baseOrientation=[0., 0., 0., 1.],
-                                            flags=pb.URDF_USE_INERTIA_FROM_FILE)
+            # p.loadURDF("/home/shahryar/catkin_ws/src/soccer_ws/soccer_description/models/soccerbot_stl.urdf",
+            # p.loadURDF("/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf",
+            self.soccerbotUid = p.loadURDF("/home/shahryar/PycharmProjects/DeepRL/gym-soccerbot/gym_soccerbot/soccer_description/models/soccerbot_stl.urdf",
+                                           useFixedBase=False,
+                                           useMaximalCoordinates=False,
+                                           basePosition=[0, 0, self.STANDING_HEIGHT],
+                                           baseOrientation=[0., 0., 0., 1.],
+                                           flags=pb.URDF_USE_INERTIA_FROM_FILE | pb.URDF_USE_MATERIAL_COLORS_FROM_MTL | pb.URDF_USE_SELF_COLLISION)
                             # |p.URDF_USE_SELF_COLLISION|p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
 
             urdfRootPath = pybullet_data.getDataPath()
-            self.planeUid = p.loadURDF(os.path.join(urdfRootPath, "plane_implicit.urdf"), basePosition=[0, 0, 0])
+            self.planeUid = p.loadURDF(os.path.join(urdfRootPath, "plane_implicit.urdf"),
+                                       useMaximalCoordinates=True,
+                                       basePosition=[0, 0, 0])
 
             # TODO change dynamics ...
-            #for i in range(p.getNumJoints(bodyUniqueId=self.soccerbotUid)):
-                #print(p.getJointInfo(bodyUniqueId=self.soccerbotUid, jointIndex=i)[1])
+            # for i in range(p.getNumJoints(bodyUniqueId=self.soccerbotUid)):
+                # print(p.getJointInfo(bodyUniqueId=self.soccerbotUid, jointIndex=i)[1])
             p.changeDynamics(self.planeUid, linkIndex=-1, lateralFriction=0.9)
+            p.changeDynamics(self.soccerbotUid, linkIndex=Links.IMU, mass=0.01, localInertiaDiagonal=[7e-7, 7e-7, 7e-7])
+            # p.changeDynamics(self.soccerbotUid, linkIndex=Links.IMU, mass=0., localInertiaDiagonal=[0., 0., 0.])
             '''
             p.changeDynamics(bodyUniqueId=self.soccerbotUid, linkIndex=Links.RIGHT_LEG_6,
                              frictionAnchor=1, lateralFriction=1,
@@ -218,6 +231,7 @@ class WalkingForward(gym.Env):
             p.setTimeStep(self.timeStep)
 
             p.setGravity(0, 0, -9.81)
+            self.gravity = [0, 0, -9.81]
             p.setRealTimeSimulation(0)  # To manually step simulation later
         p = self._p
 
