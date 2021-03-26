@@ -1,1 +1,2 @@
 from gym_soccerbot.envs.walking_forward_env import WalkingForward
+from gym_soccerbot.envs.walking_forward_norm_env import WalkingForwardNorm

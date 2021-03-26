@@ -5,6 +5,11 @@ register(
     entry_point='gym_soccerbot.envs:WalkingForward',
 )
 
+register(
+    id='walk-forward-norm-v0',
+    entry_point='gym_soccerbot.envs:WalkingForwardNorm',
+)
+
 import os
 
 def getDataPath():

@@ -98,9 +98,9 @@ class WalkingForward(gym.Env):
         feet_limit = np.array([1.6] * self.FEET_DIM)
         joint_limit = np.array([np.pi] * self.JOINT_DIM)
 
-        observation_limit_high = np.concatenate((joint_limit, imu_limit, pose_limit, feet_limit))
-        observation_limit_low = np.concatenate((-joint_limit, -imu_limit, -pose_limit, -feet_limit))
-        self.observation_space = spaces.Box(low=observation_limit_low, high=observation_limit_high, dtype=np.float32) #shape=(1, observation_dim),
+        self.observation_limit_high = np.concatenate((joint_limit, imu_limit, pose_limit, feet_limit))
+        self.observation_limit_low = np.concatenate((-joint_limit, -imu_limit, -pose_limit, -feet_limit))
+        self.observation_space = spaces.Box(low=self.observation_limit_low, high=self.observation_limit_high, dtype=np.float32) #shape=(1, observation_dim),
 
         self.seed()
         #    self.reset()
@@ -142,13 +142,6 @@ class WalkingForward(gym.Env):
         p = self._p
         pos, _ = p.getBasePositionAndOrientation(self.soccerbotUid)
         return np.array(pos, dtype=np.float32)
-
-    def old_feet(self):
-        p = self._p
-        right_pts = p.getContactPoints(bodyA=self.soccerbotUid, bodyB=self.planeUid, linkIndexA=Links.RIGHT_LEG_6)
-        left_pts = p.getContactPoints(bodyA=self.soccerbotUid, bodyB=self.planeUid, linkIndexA=Links.LEFT_LEG_6)
-        print(right_pts)
-        print(left_pts)
 
     def _feet(self):
         """
@@ -293,34 +286,36 @@ class WalkingForward(gym.Env):
         velocity_reward = 10 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
 
         time_penalty = -1
-
+        info = dict(end_cond="None")
         if self._global_pos()[2] < (self.STANDING_HEIGHT / 2): # check z component
             done = True
-            reward = -1000
+            reward = -1e4
+            info['end_cond'] = "Robot Fell"
         else:
             if np.linalg.norm(self._global_pos()[0:2] - self.goal_xy) < 0.05:
                 done = True
                 #reward = 1 / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
-                reward = 1000
+                reward = 1e3
+                info['end_cond'] = "Goal Reached"
             elif np.linalg.norm(self._global_pos()[0:2] - self.goal_xy) > (2 *np.linalg.norm(self.goal_xy)): # out of bound
                 done = True
-                reward = -1000
+                reward = -1e4
+                info['end_cond'] = "Robot Out"
             else:
                 done = False
                 reward = time_penalty + velocity_reward
                 #print(f'x = {self._global_pos()[0]}, y = {self._global_pos()[1]}')
 
-        info = {}
         return observation, reward, done, info
 
     def reset(self):
         if self._physics_client_id < 0:
             if self._renders:
                 self._p = bc.BulletClient(connection_mode=pb.GUI)
-                # self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
+                self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
             else:
                 self._p = bc.BulletClient()
-                self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
+                # self._p.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
             self._physics_client_id = self._p._client
 
             p = self._p
@@ -378,7 +373,7 @@ class WalkingForward(gym.Env):
         self.prev_lin_vel = np.array([0, 0, 0])
 
         #p.resetJointStates(self.soccerbotUid, list(range(0, 18, 1)), 0)
-        pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
+        #pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         #standing_poses = [0] * (self.JOINT_DIM + 2)
         standing_poses = self._standing_poses()
         for i in range(self.JOINT_DIM + 2):
@@ -405,7 +400,8 @@ class WalkingForward(gym.Env):
         Returns: 
             observation (object): the initial observation.
         """
-        #pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
+        if self._renders:
+            pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         return observation
 
     def render(self, mode='human'):
