@@ -1,0 +1,10 @@
+#!/bin/bash
+cd ..
+sudo apt-get install -y python3-tk virtualenv
+virtualenv -p python3 venv
+. venv/bin/activate
+cd gym-soccerbot
+pip install -r req.txt
+mv main.py ../
+cd ..
+#python3 main.py
