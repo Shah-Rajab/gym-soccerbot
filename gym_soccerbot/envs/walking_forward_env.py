@@ -287,7 +287,7 @@ class WalkingForward(gym.Env):
 
         time_penalty = -1
         info = dict(end_cond="None")
-        if self._global_pos()[2] < (self.STANDING_HEIGHT / 2): # check z component
+        if self._global_pos()[2] < 0.25: #HARDCODE (self.STANDING_HEIGHT / 2): # check z component
             done = True
             reward = -1e4
             info['end_cond'] = "Robot Fell"
