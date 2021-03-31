@@ -16,14 +16,14 @@ def train(output):
     vec_env = make_vec_env(env_id, n_envs=128, vec_env_cls=SubprocVecEnv)
 
     # vec_env = gym.make(env_id, renders=False)
-    policy_kwargs_ppo = dict(activation_fn=th.nn.ReLU, net_arch=[dict(pi=[256, 256], vf=[256, 256])])
+    policy_kwargs_ppo = dict(activation_fn=th.nn.Tanh, net_arch=[dict(pi=[64, 64], vf=[64, 64])])
     #policy_kwargs_ppo["optimizer_class"] = RMSpropTFLike
     #policy_kwargs_ppo["optimizer_kwargs"] = dict(alpha=0.99, eps=1e-5, weight_decay=0)
 
     model = PPO("MlpPolicy", vec_env, n_steps=4096, batch_size=65536, verbose=1, policy_kwargs=policy_kwargs_ppo,
-                gae_lambda=0.95, gamma=0.99, n_epochs=40, ent_coef=0.0, clip_range=0.1, learning_rate=0.001)#, device='cpu')
+                gae_lambda=0.95, gamma=0.99, n_epochs=10, ent_coef=0.0, clip_range=0.2, learning_rate=0.003)#, device='cpu')
 
-    model.learn(total_timesteps=5e8)
+    model.learn(total_timesteps=2e8)
     model.save(output)
 
     del model
@@ -56,9 +56,9 @@ if __name__ == "__main__":
 
     #name = "ppo_walk_test_lots_50MM"
     #name = "ppo_walk_test_lots_200MM"
-    name = "ppo_walk_thread_500M"
+    name = "ppo_walk_thread_200M"
     #name = "ppo_walk_test_prof"
 
-    train(name)
-    #see(name, PPO)
+    #train(name)
+    see(name, PPO)
 
