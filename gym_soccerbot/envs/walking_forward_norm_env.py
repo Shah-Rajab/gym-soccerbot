@@ -9,7 +9,9 @@ class WalkingForwardNorm(WalkingForward):
         self.joint_limit_low = self._joint_limit_low()
 
     def step(self, action):
-        self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
+        action = self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
+        assert(np.logical_and.reduce(np.less_equal(action, self.joint_limit_high)), "Joint action max limit exceeded")
+        assert(np.logical_and.reduce(np.more_equal(action, self.joint_limit_low)), "Joint action min limit exceeded")
         observation, reward, done, info = super().step(action)
         observation = self.normalize(observation, self.observation_limit_low, self.observation_limit_high)
         reward = reward / float(1e4)
