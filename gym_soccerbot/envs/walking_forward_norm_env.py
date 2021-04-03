@@ -1,20 +1,22 @@
-import numpy
+import numpy as np
 from gym_soccerbot.envs.walking_forward_env import WalkingForward
 
 
 class WalkingForwardNorm(WalkingForward):
-    def __init__(self, renders=False):
+    def __init__(self, renders=False, reward_normal_factor=1e4):
         super().__init__(renders)
         self.joint_limit_high = self._joint_limit_high()
         self.joint_limit_low = self._joint_limit_low()
+        self.reward_normal_factor = reward_normal_factor
 
     def step(self, action):
         action = self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
-        assert(np.logical_and.reduce(np.less_equal(action, self.joint_limit_high)), "Joint action max limit exceeded")
-        assert(np.logical_and.reduce(np.more_equal(action, self.joint_limit_low)), "Joint action min limit exceeded")
+        # assert np.logical_and.reduce(np.less_equal(action, self.joint_limit_high)), "Joint action max limit exceeded"
+        # assert np.logical_and.reduce(np.greater_equal(action, self.joint_limit_low)), "Joint action min limit exceeded"
+        action = np.clip(action, self.joint_limit_low, self.joint_limit_high)
         observation, reward, done, info = super().step(action)
         observation = self.normalize(observation, self.observation_limit_low, self.observation_limit_high)
-        reward = reward / float(1e4)
+        reward = reward / float(self.reward_normal_factor)
         return observation, reward, done, info
 
     def reset(self):
