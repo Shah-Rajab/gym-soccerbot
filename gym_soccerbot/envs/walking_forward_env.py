@@ -65,6 +65,7 @@ class Joints(enum.IntEnum):
 class WalkingForward(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
+
     def __init__(self, renders=False):
         # start the bullet physics server
         self._renders = renders
@@ -91,15 +92,15 @@ class WalkingForward(gym.Env):
         self.POSE_DIM = 3
         self.IMU_DIM = 6
         self.FEET_DIM = 8
-        observation_dim = self.JOINT_DIM + self.IMU_DIM + self.POSE_DIM + self.FEET_DIM
+        self.observation_dim = self.JOINT_DIM + self.IMU_DIM + self.POSE_DIM + self.FEET_DIM
 
-        imu_limit = np.array([100.] * self.IMU_DIM)
-        pose_limit = np.array([3.] * self.POSE_DIM)
-        feet_limit = np.array([1.6] * self.FEET_DIM)
-        joint_limit = np.array([np.pi] * self.JOINT_DIM)
+        self.imu_limit = np.array([100.] * self.IMU_DIM)
+        self.pose_limit = np.array([3.] * self.POSE_DIM)
+        self.feet_limit = np.array([1.6] * self.FEET_DIM)
+        self.joint_limit = np.array([np.pi] * self.JOINT_DIM)
 
-        self.observation_limit_high = np.concatenate((joint_limit, imu_limit, pose_limit, feet_limit))
-        self.observation_limit_low = np.concatenate((-joint_limit, -imu_limit, -pose_limit, -feet_limit))
+        self.observation_limit_high = np.concatenate((self.joint_limit, self.imu_limit, self.pose_limit, self.feet_limit))
+        self.observation_limit_low = np.concatenate((-self.joint_limit, -self.imu_limit, -self.pose_limit, -self.feet_limit))
         self.observation_space = spaces.Box(low=self.observation_limit_low, high=self.observation_limit_high, dtype=np.float32) #shape=(1, observation_dim),
 
         self.seed()
@@ -136,7 +137,7 @@ class WalkingForward(gym.Env):
         #print(f'lin_acc = {lin_acc}', end="\t\t")
         #print(f'lin_acc = {lin_acc}')
         #print(f'ang_vel = {ang_vel}')
-        return np.concatenate((lin_acc, ang_vel))
+        return np.clip(np.concatenate((lin_acc, ang_vel)), -self.imu_limit, self.imu_limit)
 
     def _global_pos(self):
         p = self._p
@@ -219,10 +220,10 @@ class WalkingForward(gym.Env):
         joint_limit_high[Joints.LEFT_LEG_5] = 0.5
         joint_limit_high[Joints.LEFT_LEG_6] = 0.15
 
-        joint_limit_high[Joints.LEFT_ARM_1] = 1.0
+        joint_limit_high[Joints.LEFT_ARM_1] = 0.95
         joint_limit_high[Joints.LEFT_ARM_2] = 0.8
 
-        joint_limit_high[Joints.RIGHT_ARM_1] = 1.0
+        joint_limit_high[Joints.RIGHT_ARM_1] = 0.95
         joint_limit_high[Joints.RIGHT_ARM_2] = 0.8
 
         return joint_limit_high * np.pi

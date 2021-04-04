@@ -1,4 +1,5 @@
 import numpy as np
+from gym import spaces
 from gym_soccerbot.envs.walking_forward_env import WalkingForward
 
 
@@ -8,6 +9,9 @@ class WalkingForwardNorm(WalkingForward):
         self.joint_limit_high = self._joint_limit_high()
         self.joint_limit_low = self._joint_limit_low()
         self.reward_normal_factor = reward_normal_factor
+        self.reward_range = [float(-2), float(2)]
+        self.observation_space = spaces.Box(low=-1., high=1., shape=(self.observation_dim, ) , dtype=np.float32)
+        self.action_space = spaces.Box(low=-1., high=1., shape=(self.JOINT_DIM, ), dtype=np.float32)
 
     def step(self, action):
         action = self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
