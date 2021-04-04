@@ -66,7 +66,7 @@ class WalkingForwardV1(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
 
-    def __init__(self, renders=False, dtype=np.float64, warm_up_steps=0, reward_scale=2e4):
+    def __init__(self, renders=False, dtype=np.float64, warm_up=True, reward_scale=2e4, goal=[1, 0]):
         self.dtype = dtype
         self.reward_scale = reward_scale
 
@@ -79,16 +79,16 @@ class WalkingForwardV1(gym.Env):
         self.prev_lin_vel = np.array([0, 0, 0])
         self.gravity = [0, 0, -9.81]
         self.STANDING_HEIGHT = 0.32
-        self.goal_xy = [1, 0]
+        self.goal_xy = goal
 
-        self.WARM_UP_STEPS = warm_up_steps
+        self.WARM_UP = warm_up
 
         # TODO Change action space
         self.JOINT_DIM = 16
-        joint_limit_high = self._joint_limit_high()
-        joint_limit_low = self._joint_limit_low()
+        self.joint_limit_high = self._joint_limit_high()
+        self.joint_limit_low = self._joint_limit_low()
 
-        self.action_space = spaces.Box(low=joint_limit_low, high=joint_limit_high, dtype=self.dtype) #, shape=(1, self.JOINT_DIM)
+        self.action_space = spaces.Box(low=self.joint_limit_low, high=self.joint_limit_high, dtype=self.dtype) #, shape=(1, self.JOINT_DIM)
 
         # TODO Change observation space
 
@@ -261,11 +261,12 @@ class WalkingForwardV1(gym.Env):
 
     def step(self, action):
         p = self._p
-        #if self._renders:
-            #p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
 
         feet = self._feet()
         imu = self._imu()
+
+        # CLIP ACTIONS
+        action = np.clip(action, self.joint_limit_low, self.joint_limit_high)
 
         p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
                                     controlMode=pb.POSITION_CONTROL,
@@ -282,14 +283,6 @@ class WalkingForwardV1(gym.Env):
         joint_states = p.getJointStates(self.soccerbotUid, list(range(0, self.JOINT_DIM, 1)))
         joints_pos = np.array([state[0] for state in joint_states], dtype=self.dtype)
 
-        """
-        From core.py in gym:
-        Returns:
-            observation (object): agent's observation of the current environment
-            reward (float) : amount of reward returned after previous action
-            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
-            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
-        """
         # TODO Observation
         observation = np.concatenate((joints_pos, imu, self._global_pos(), feet))
 
@@ -392,7 +385,10 @@ class WalkingForwardV1(gym.Env):
             p.resetJointState(self.soccerbotUid, i, standing_poses[i])
 
         # WARM UP SIMULATION
-        for _ in range(self.WARM_UP_STEPS):
+        if self.WARM_UP:
+            warm_up = self.np_random.random_integers(0, 10)
+        for _ in range(warm_up):
+            p.stepSimulation()
             p.stepSimulation()
 
         # TODO set state???
@@ -405,13 +401,6 @@ class WalkingForwardV1(gym.Env):
         start_pos = np.array([0, 0, self.STANDING_HEIGHT], dtype=self.dtype)
         observation = np.concatenate((joints_pos, imu, start_pos, feet))
 
-        #pb.resetSimulation()
-
-        """
-        From core.py in gym:
-        Returns: 
-            observation (object): the initial observation.
-        """
         if self._renders:
             pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         return observation
@@ -450,12 +439,13 @@ class WalkingForwardV1(gym.Env):
                 renderer=self._p.ER_BULLET_HARDWARE_OPENGL,
                 viewMatrix=view_matrix,
                 projectionMatrix=proj_matrix)
-            # self._p.resetDebugVisualizerCamera(
-            #   cameraDistance=2 * self._cam_dist,
-            #   cameraYaw=self._cam_yaw,
-            #   cameraPitch=self._cam_pitch,
-            #   cameraTargetPosition=base_pos
-            # )
+
+            self._p.resetDebugVisualizerCamera(
+              cameraDistance=2 * self._cam_dist,
+              cameraYaw=self._cam_yaw,
+              cameraPitch=self._cam_pitch,
+              cameraTargetPosition=base_pos
+            )
             pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         else:
             px = np.array([[[255, 255, 255, 255]] * self._render_width] * self._render_height, dtype=np.uint8)
