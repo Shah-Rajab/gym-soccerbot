@@ -44,9 +44,12 @@ class RollingAvg:
 
         stats = self.get_stats()
         if (stats[0] + stats[1] + (stats[2] * self.angvel_coeff)) < self.threshold:
+            logger.info(f'x_agg: {stats[0]:.3f}, y_agg:{stats[1]:.3f}, za_agg: {stats[2]:.3f}')
+            # print(f'x_agg: {stats[0]:.3f}, y_agg:{stats[1]:.3f}, za_agg: {stats[2]:.3f}')
             return False
         else:
             return True
+
 
 class Links(enum.IntEnum):
     TORSO = -1
@@ -327,9 +330,9 @@ class WalkingForwardV1(gym.Env):
         lin_vel = np.array(lin_vel, dtype=self.dtype)[0:2]
         distance_unit_vec = (self._global_pos()[0:2] - self.goal_xy) \
                             / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
-        velocity_reward = 10 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
+        velocity_reward = 1000 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
 
-        time_penalty = -1
+        #time_penalty = -1
         info = dict(end_cond="None")
         # Fall
         if self._global_pos()[2] < 0.22: #HARDCODE (self.STANDING_HEIGHT / 2): # check z component
@@ -356,7 +359,8 @@ class WalkingForwardV1(gym.Env):
             # Normal case
             else:
                 done = False
-                reward = time_penalty + velocity_reward
+                reward = velocity_reward
+                # reward = time_penalty + velocity_reward
                 #print(f'x = {self._global_pos()[0]}, y = {self._global_pos()[1]}')
         reward /= self.reward_scale
         return observation, reward, done, info

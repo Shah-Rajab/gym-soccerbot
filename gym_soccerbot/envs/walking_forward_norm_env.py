@@ -15,7 +15,7 @@ class WalkingForwardNorm(WalkingForwardV1):
         self.action_space = spaces.Box(low=-1., high=1., shape=(self.JOINT_DIM, ), dtype=np.float32)
 
     def step(self, action):
-        action = self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
+        # action = self.unnormalize(action, self.joint_limit_low, self.joint_limit_high)
         # assert np.logical_and.reduce(np.less_equal(action, self.joint_limit_high)), "Joint action max limit exceeded"
         # assert np.logical_and.reduce(np.greater_equal(action, self.joint_limit_low)), "Joint action min limit exceeded"
         action = np.clip(action, self.joint_limit_low, self.joint_limit_high)
