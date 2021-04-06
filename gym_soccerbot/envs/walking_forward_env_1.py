@@ -15,6 +15,38 @@ import gym_soccerbot
 
 logger = logging.getLogger(__name__)
 
+class RollingAvg:
+    def __init__(self, window, threshold, angvel_coeff):
+        self.window = window
+        self.threshold = threshold
+        self.angvel_coeff = angvel_coeff
+        self.x_buffer = np.zeros((self.window,))
+        self.y_buffer = np.zeros((self.window,))
+        self.za_buffer = np.zeros((self.window,))
+        self.count_down = self.window
+
+    def update(self, new_x, new_y, new_za):
+        self.x_buffer = np.roll(self.x_buffer, 1)
+        self.y_buffer = np.roll(self.y_buffer, 1)
+        self.za_buffer = np.roll(self.y_buffer, 1)
+        self.x_buffer[0] = new_x ** 2
+        self.y_buffer[0] = new_y ** 2
+        self.za_buffer[0] = new_za ** 2
+        if self.count_down != 0:
+            self.count_down -= 1
+
+    def get_stats(self):
+        return np.average(self.x_buffer), np.average(self.y_buffer), np.average(self.za_buffer)
+
+    def is_moving(self):
+        if self.count_down > 0:
+            return True
+
+        stats = self.get_stats()
+        if (stats[0] + stats[1] + (stats[2] * self.angvel_coeff)) < self.threshold:
+            return False
+        else:
+            return True
 
 class Links(enum.IntEnum):
     TORSO = -1
@@ -110,6 +142,7 @@ class WalkingForwardV1(gym.Env):
         self.reset()
         self.viewer = None
         self._configure()
+        # self.st = RollingAvg(256, 0.01, 0.01)
 
     def do_render(self, rend):
         self._renders = bool(rend)
@@ -129,6 +162,7 @@ class WalkingForwardV1(gym.Env):
         # lin_vel = [0, 0, 0]
         # ang_vel = [0, 0, 0]
         #p.getBaseVelocity(self.soccerbotUid)
+        self.st.update(lin_vel[0], lin_vel[1], ang_vel[2])
         lin_vel = np.array(lin_vel, dtype = np.float32)
 
         lin_acc = (lin_vel - self.prev_lin_vel) / self.timeStep
@@ -297,20 +331,29 @@ class WalkingForwardV1(gym.Env):
 
         time_penalty = -1
         info = dict(end_cond="None")
+        # Fall
         if self._global_pos()[2] < 0.22: #HARDCODE (self.STANDING_HEIGHT / 2): # check z component
             done = True
             reward = -1e4
             info['end_cond'] = "Robot Fell"
         else:
+            # Close to the Goal
             if np.linalg.norm(self._global_pos()[0:2] - self.goal_xy) < 0.05:
                 done = True
                 #reward = 1 / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
                 reward = 1e3
                 info['end_cond'] = "Goal Reached"
+            # Out of Bound
             elif np.linalg.norm(self._global_pos()[0:2] - self.goal_xy) > (2 *np.linalg.norm(self.goal_xy)): # out of bound
                 done = True
                 reward = -1e4
                 info['end_cond'] = "Robot Out"
+            # Not moving for a long time
+            elif not self.st.is_moving():
+                done = True
+                reward = -1e4
+                info['end_cond'] = "Not moving"
+            # Normal case
             else:
                 done = False
                 reward = time_penalty + velocity_reward
@@ -394,12 +437,15 @@ class WalkingForwardV1(gym.Env):
         # TODO set state???
 
         # TODO get observation
+        self.st = RollingAvg(256, 0.01, 0.01)
         feet = self._feet()
         imu = self._imu()
         joint_states = p.getJointStates(self.soccerbotUid, list(range(0, self.JOINT_DIM, 1)))
         joints_pos = np.array([state[0] for state in joint_states], dtype=self.dtype)
         start_pos = np.array([0, 0, self.STANDING_HEIGHT], dtype=self.dtype)
         observation = np.concatenate((joints_pos, imu, start_pos, feet))
+
+        # Roll Stats
 
         if self._renders:
             pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
