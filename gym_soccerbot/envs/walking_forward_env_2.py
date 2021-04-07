@@ -334,7 +334,7 @@ class WalkingForwardV2(gym.Env):
         lin_vel = np.array(lin_vel, dtype=self.dtype)[0:2]
         distance_unit_vec = (self._global_pos()[0:2] - self.goal_xy) \
                             / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
-        velocity_reward = 1000 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
+        velocity_reward = 1000 * np.dot(distance_unit_vec, lin_vel)
 
         #time_penalty = -1
         info = dict(end_cond="None")
