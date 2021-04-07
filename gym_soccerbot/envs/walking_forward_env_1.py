@@ -44,9 +44,12 @@ class RollingAvg:
 
         stats = self.get_stats()
         if (stats[0] + stats[1] + (stats[2] * self.angvel_coeff)) < self.threshold:
+            #  logger.info(f'x_agg: {stats[0]:.3f}, y_agg:{stats[1]:.3f}, za_agg: {stats[2]:.3f}')
+            # print(f'x_agg: {stats[0]:.3f}, y_agg:{stats[1]:.3f}, za_agg: {stats[2]:.3f}')
             return False
         else:
             return True
+
 
 class Links(enum.IntEnum):
     TORSO = -1
@@ -110,7 +113,7 @@ class WalkingForwardV1(gym.Env):
 
         self.prev_lin_vel = np.array([0, 0, 0])
         self.gravity = [0, 0, -9.81]
-        self.STANDING_HEIGHT = 0.32
+        self.STANDING_HEIGHT = 0.35 #0.32
         self.goal_xy = goal
 
         self.WARM_UP = warm_up
@@ -214,35 +217,6 @@ class WalkingForwardV1(gym.Env):
             locations[index[1] + (index[0] * 2) + 4] = 1.
         return np.array(locations)
 
-    def _standing_poses(self, random=False):
-        standing_poses = [None] * (self.JOINT_DIM + 2)
-        standing_poses[Joints.RIGHT_LEG_1] = 0.0
-        standing_poses[Joints.RIGHT_LEG_2] = 0.05
-        standing_poses[Joints.RIGHT_LEG_3] = 0.0
-        standing_poses[Joints.RIGHT_LEG_4] = 0.0
-        standing_poses[Joints.RIGHT_LEG_5] = 0.0
-        standing_poses[Joints.RIGHT_LEG_6] = -0.05
-
-        standing_poses[Joints.LEFT_LEG_1] = 0.0
-        standing_poses[Joints.LEFT_LEG_2] = 0.05
-        standing_poses[Joints.LEFT_LEG_3] = 0.0
-        standing_poses[Joints.LEFT_LEG_4] = 0.0
-        standing_poses[Joints.LEFT_LEG_5] = 0.0
-        standing_poses[Joints.LEFT_LEG_6] = -0.05
-
-        standing_poses[Joints.HEAD_1] = 0.0
-        standing_poses[Joints.HEAD_2] = 0.0
-
-        standing_poses[Joints.LEFT_ARM_1] = -0.5
-        standing_poses[Joints.LEFT_ARM_2] = 2.8
-        standing_poses[Joints.RIGHT_ARM_1] = -0.5
-        standing_poses[Joints.RIGHT_ARM_2] = 2.8
-
-        if random:
-            standing_poses = standing_poses + 0.1 * self.np_random.uniform(-1., 1., np.size(standing_poses))
-
-        return standing_poses
-
     def _joint_limit_high(self):
         joint_limit_high = np.array([0] * self.JOINT_DIM)
 
@@ -293,6 +267,39 @@ class WalkingForwardV1(gym.Env):
 
         return joint_limit_low * (-np.pi)
 
+
+    def _standing_poses(self, random=False):
+        standing_poses = [None] * (self.JOINT_DIM + 2)
+        standing_poses[Joints.RIGHT_LEG_1] = 0.0
+        standing_poses[Joints.RIGHT_LEG_2] = 0.05
+        standing_poses[Joints.RIGHT_LEG_3] = 0.0
+        standing_poses[Joints.RIGHT_LEG_4] = 0.0
+        standing_poses[Joints.RIGHT_LEG_5] = 0.0
+        standing_poses[Joints.RIGHT_LEG_6] = -0.05
+
+        standing_poses[Joints.LEFT_LEG_1] = 0.0
+        standing_poses[Joints.LEFT_LEG_2] = 0.05
+        standing_poses[Joints.LEFT_LEG_3] = 0.0
+        standing_poses[Joints.LEFT_LEG_4] = 0.0
+        standing_poses[Joints.LEFT_LEG_5] = 0.0
+        standing_poses[Joints.LEFT_LEG_6] = -0.05
+
+        standing_poses[Joints.HEAD_1] = 0.0
+        standing_poses[Joints.HEAD_2] = 0.0
+
+        standing_poses[Joints.LEFT_ARM_1] = -0.5
+        standing_poses[Joints.LEFT_ARM_2] = 2.8
+        standing_poses[Joints.RIGHT_ARM_1] = -0.5
+        standing_poses[Joints.RIGHT_ARM_2] = 2.8
+
+        if random:
+            standing_poses[0:self.JOINT_DIM] = standing_poses[0:self.JOINT_DIM] + \
+                    0.4 * self.np_random.uniform(-0., 1., np.size(standing_poses[0:self.JOINT_DIM])) * (self._joint_limit_high() - standing_poses[0:self.JOINT_DIM]) + \
+                    0.4 * self.np_random.uniform(-0., 1., np.size(standing_poses[0:self.JOINT_DIM])) * (self._joint_limit_low() - standing_poses[0:self.JOINT_DIM])
+            standing_poses[0:self.JOINT_DIM] = np.clip(standing_poses[0:self.JOINT_DIM], self.joint_limit_low, self.joint_limit_high)
+        return standing_poses
+
+
     def step(self, action):
         p = self._p
 
@@ -327,9 +334,9 @@ class WalkingForwardV1(gym.Env):
         lin_vel = np.array(lin_vel, dtype=self.dtype)[0:2]
         distance_unit_vec = (self._global_pos()[0:2] - self.goal_xy) \
                             / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
-        velocity_reward = 10 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
+        velocity_reward = 1000 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
 
-        time_penalty = -1
+        #time_penalty = -1
         info = dict(end_cond="None")
         # Fall
         if self._global_pos()[2] < 0.22: #HARDCODE (self.STANDING_HEIGHT / 2): # check z component
@@ -356,7 +363,8 @@ class WalkingForwardV1(gym.Env):
             # Normal case
             else:
                 done = False
-                reward = time_penalty + velocity_reward
+                reward = velocity_reward
+                # reward = time_penalty + velocity_reward
                 #print(f'x = {self._global_pos()[0]}, y = {self._global_pos()[1]}')
         reward /= self.reward_scale
         return observation, reward, done, info
