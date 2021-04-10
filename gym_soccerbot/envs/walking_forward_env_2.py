@@ -113,7 +113,7 @@ class WalkingForwardV2(gym.Env):
 
         self.prev_lin_vel = np.array([0, 0, 0])
         self.gravity = [0, 0, -9.81]
-        self.STANDING_HEIGHT = 0.35 #0.32
+        self.STANDING_HEIGHT = 0.27 #0.35 #0.32
         self.goal_xy = goal
 
         self.WARM_UP = warm_up
@@ -299,6 +299,15 @@ class WalkingForwardV2(gym.Env):
             standing_poses[0:self.JOINT_DIM] = np.clip(standing_poses[0:self.JOINT_DIM], self.joint_limit_low, self.joint_limit_high)
         return standing_poses
 
+    @staticmethod
+    def _standing_poses2():
+        hardcoded_angles = \
+            [2.827433388230814, 0, 2.827433388230814, 0, 0.0016725139646804887, 0.0960802594363035,
+             0.5793527147847758, -1.2298418591359193, 0.6509027637698601, -0.06231839374272367,
+             0.00030337575088856816, -0.10382957319901398, 0.578543334661491, -1.2276210689082445,
+             0.6495736803093827, 0.06684757628616049, 0, 0]
+        return hardcoded_angles
+
 
     def step(self, action):
         p = self._p
@@ -332,10 +341,10 @@ class WalkingForwardV2(gym.Env):
 
         [lin_vel, _] = p.getBaseVelocity(self.soccerbotUid)
         lin_vel = np.array(lin_vel, dtype=self.dtype)[0:2]
-        distance_unit_vec = (self._global_pos()[0:2] - self.goal_xy) \
-                            / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
+        distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
+                            / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
         velocity_reward = 1000 * np.dot(distance_unit_vec, lin_vel)
-
+        velocity_reward = np.max(velocity_reward, 0)
         #time_penalty = -1
         info = dict(end_cond="None")
         # Fall
@@ -431,7 +440,7 @@ class WalkingForwardV2(gym.Env):
 
         # WARM UP SIMULATION
         if self.WARM_UP:
-            warm_up = self.np_random.random_integers(0, 10)
+            warm_up = self.np_random.randint(0, 11)
         for _ in range(warm_up):
             p.stepSimulation()
             p.stepSimulation()
@@ -487,13 +496,14 @@ class WalkingForwardV2(gym.Env):
                 renderer=self._p.ER_BULLET_HARDWARE_OPENGL,
                 viewMatrix=view_matrix,
                 projectionMatrix=proj_matrix)
-
+            '''
             self._p.resetDebugVisualizerCamera(
               cameraDistance=2 * self._cam_dist,
               cameraYaw=self._cam_yaw,
               cameraPitch=self._cam_pitch,
               cameraTargetPosition=base_pos
             )
+            '''
             pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         else:
             px = np.array([[[255, 255, 255, 255]] * self._render_width] * self._render_height, dtype=np.uint8)

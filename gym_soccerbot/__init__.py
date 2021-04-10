@@ -20,6 +20,16 @@ register(
     entry_point='gym_soccerbot.envs:WalkingForwardV2',
 )
 
+register(
+    id='walk-forward-v3',
+    entry_point='gym_soccerbot.envs:WalkingForwardV3',
+)
+
+register(
+    id='walk-forward-norm-v1',
+    entry_point='gym_soccerbot.envs:WalkingForwardNormAgn',
+)
+
 import os
 
 def getDataPath():

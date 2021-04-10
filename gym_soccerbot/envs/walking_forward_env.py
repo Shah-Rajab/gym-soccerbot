@@ -282,8 +282,8 @@ class WalkingForward(gym.Env):
 
         [lin_vel, _] = p.getBaseVelocity(self.soccerbotUid)
         lin_vel = np.array(lin_vel, dtype=np.float32)[0:2]
-        distance_unit_vec = (self._global_pos()[0:2] - self.goal_xy) \
-                            / np.linalg.norm(self._global_pos()[0:2] - self.goal_xy)
+        distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
+                            / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
         velocity_reward = 10 * np.linalg.norm(np.dot(distance_unit_vec, lin_vel))
 
         time_penalty = -1
