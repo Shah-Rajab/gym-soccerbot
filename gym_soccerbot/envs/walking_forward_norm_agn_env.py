@@ -55,6 +55,9 @@ class WalkingForwardNormAgn(Env):
                                      self.observation_plus_range) * 0
         return observation
 
+    def render(self, **kwargs):
+        return self.env.render(**kwargs)
+
     def normalize(self, actual, low_end, high_end, scale):
         """
         Normalizes to [-1, 1]
