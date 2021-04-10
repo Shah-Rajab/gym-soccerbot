@@ -100,7 +100,7 @@ class Joints(enum.IntEnum):
 class WalkingForwardV3(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
-    DTYPE = np.float64
+    DTYPE = np.float32
 
     _POSE_DIM = 3
     _IMU_DIM = 6

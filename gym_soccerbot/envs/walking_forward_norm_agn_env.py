@@ -17,7 +17,7 @@ class WalkingForwardNormAgn(Env):
         if "dtype" in kwargs.keys():
             self.dtype = kwargs["dtype"]
         else:
-            self.dtype = np.float64
+            self.dtype = np.float32
 
         # Observation Space
         self.observation_plus_range = observation_plus_range
