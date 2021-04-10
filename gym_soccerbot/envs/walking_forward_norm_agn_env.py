@@ -55,8 +55,7 @@ class WalkingForwardNormAgn(Env):
                                      self.observation_plus_range) * 0
         return observation
 
-    @staticmethod
-    def normalize(actual, low_end, high_end, scale):
+    def normalize(self, actual, low_end, high_end, scale):
         """
         Normalizes to [-1, 1]
         :param actual: to-be-normalized value
@@ -64,14 +63,13 @@ class WalkingForwardNormAgn(Env):
         :param high_end: s.e.
         :return: normalized value
         """
-        val = actual - low_end
+        val = np.array(actual - low_end, dtype=self.dtype)
         val = 2 * val / (high_end - low_end)
         val = val - 1
         val *= float(scale)
         return val
 
-    @staticmethod
-    def denormalize(norm, low_end, high_end, scale):
+    def denormalize(self, norm, low_end, high_end, scale):
         """
         Unnormalizes from [-1, 1]
         :param norm: to-be-unnormalized value
@@ -79,7 +77,7 @@ class WalkingForwardNormAgn(Env):
         :param high_end: s.e.
         :return: actual value
         """
-        val = np.array(norm) / float(scale)
+        val = np.array(np.array(norm) / float(scale), dtype=self.dtype)
         val += 1
         val = (val / 2) * (high_end - low_end)
         val = val + low_end
