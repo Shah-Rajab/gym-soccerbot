@@ -188,7 +188,6 @@ class WalkingForwardV3(gym.Env):
     _render_width = 320
     def __init__(self, renders=False, warm_up=False, goal=[1, 0], seed=42):
         # start the bullet physics server
-        print(f'SEED: {seed}')
         self._renders = renders
         self._physics_client_id = -1
 
@@ -342,10 +341,8 @@ class WalkingForwardV3(gym.Env):
         # Calculate Velocity direction field
         [lin_vel, _] = p.getBaseVelocity(self.soccerbotUid)
         lin_vel = np.array(lin_vel, dtype=self.DTYPE)[0:2]
-        print(f'lin_vel: {lin_vel}')
         distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
                             / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
-        print(f'distance_unit_vec: {distance_unit_vec}')
         velocity_reward = np.dot(distance_unit_vec, lin_vel)
         info = dict(end_cond="None")
         # Fall
@@ -429,13 +426,13 @@ class WalkingForwardV3(gym.Env):
         #p.resetJointStates(self.soccerbotUid, list(range(0, 18, 1)), 0)
         #pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         #standing_poses = [0] * (self._JOINT_DIM + 2)
-        standing_poses = self._standing_poses() #self.np_random)
+        standing_poses = self._standing_poses(self.np_random)
         for i in range(self._JOINT_DIM + 2):
             p.resetJointState(self.soccerbotUid, i, standing_poses[i])
 
         # WARM UP SIMULATION
         if self.WARM_UP:
-            warm_up = self.np_random.randint(0, 11)
+            warm_up = self.np_random.randint(0, 21)
             for _ in range(warm_up):
                 p.stepSimulation()
                 p.stepSimulation()

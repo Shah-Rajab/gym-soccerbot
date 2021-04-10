@@ -97,7 +97,7 @@ def test_episode_render():
         observation, reward, done, info = env.step(np.zeros(16))
         cum_reward += reward
         print(f'------------reward: {reward:.5f}')
-        sleep(0.1)
+        sleep(0.01)
         i += 1
         if i == 4096:
             break
