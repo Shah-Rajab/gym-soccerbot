@@ -17,7 +17,7 @@ class WalkingForwardNormAgn(Env):
         if "dtype" in kwargs.keys():
             self.dtype = kwargs["dtype"]
         else:
-            self.dtype = np.float32
+            self.dtype = np.float64
 
         # Observation Space
         self.observation_plus_range = observation_plus_range
@@ -28,8 +28,8 @@ class WalkingForwardNormAgn(Env):
         self.action_space = spaces.Box(low=-self.action_plus_range, high=self.action_plus_range,
                                        shape=(self.env._JOINT_DIM, ), dtype=self.dtype)
         # Reward
-        self.reward_plus_range = reward_plus_range
-        self.reward_range = [float(-reward_plus_range), float(reward_plus_range)]
+        self.reward_plus_range = self.dtype(reward_plus_range)
+        self.reward_range = [self.dtype(-reward_plus_range), self.dtype(reward_plus_range)]
 
     def step(self, action):
         action = self.denormalize(action,
@@ -63,11 +63,11 @@ class WalkingForwardNormAgn(Env):
         :param high_end: s.e.
         :return: normalized value
         """
-        val = np.array(actual - low_end, dtype=self.dtype)
+        val = self.dtype(actual - low_end)
         val = 2 * val / (high_end - low_end)
         val = val - 1
-        val *= float(scale)
-        return val
+        val *= self.dtype(scale)
+        return self.dtype(val)
 
     def denormalize(self, norm, low_end, high_end, scale):
         """
@@ -77,11 +77,11 @@ class WalkingForwardNormAgn(Env):
         :param high_end: s.e.
         :return: actual value
         """
-        val = np.array(np.array(norm) / float(scale), dtype=self.dtype)
+        val = norm / self.dtype(scale)
         val += 1
         val = (val / 2) * (high_end - low_end)
         val = val + low_end
-        return val
+        return self.dtype(val)
 
 
 

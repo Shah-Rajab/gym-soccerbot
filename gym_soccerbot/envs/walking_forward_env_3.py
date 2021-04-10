@@ -100,7 +100,7 @@ class Joints(enum.IntEnum):
 class WalkingForwardV3(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
-    DTYPE = np.float32
+    DTYPE = np.float64
 
     _POSE_DIM = 3
     _IMU_DIM = 6
@@ -381,7 +381,7 @@ class WalkingForwardV3(gym.Env):
 
             urdfBotPath = gym_soccerbot.getDataPath()
             self.soccerbotUid = p.loadURDF(os.path.join(urdfBotPath, "soccer_description/models/soccerbot_stl.urdf"),
-                                           useFixedBase=True,
+                                           useFixedBase=False,
                                            useMaximalCoordinates=False,
                                            basePosition=[0, 0, self._STANDING_HEIGHT],
                                            baseOrientation=[0., 0., 0., 1.],
