@@ -151,8 +151,8 @@ class WalkingForwardV3(gym.Env):
 
     _joint_limit_low *= (-np.pi)
 
-    _AX_12_force = 1.6
-    _MX_28_force = 2.3
+    _AX_12_force = 1.5
+    _MX_28_force = 2.5
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
