@@ -1,5 +1,5 @@
 import numpy as np
-from gym import spaces, Wrapper, Env
+from gym import spaces, Env
 from gym.envs.registration import spec, load
 
 
@@ -17,7 +17,7 @@ class WalkingForwardNormAgn(Env):
         if "dtype" in kwargs.keys():
             self.dtype = kwargs["dtype"]
         else:
-            self.dtype = np.float64
+            self.dtype = np.float32
 
         # Observation Space
         self.observation_plus_range = observation_plus_range
@@ -29,7 +29,7 @@ class WalkingForwardNormAgn(Env):
                                        shape=(self.env._JOINT_DIM, ), dtype=self.dtype)
         # Reward
         self.reward_plus_range = self.dtype(reward_plus_range)
-        self.reward_range = [self.dtype(-reward_plus_range), self.dtype(reward_plus_range)]
+        self.reward_range = [-reward_plus_range, reward_plus_range]
 
     def step(self, action):
         action = self.denormalize(action,

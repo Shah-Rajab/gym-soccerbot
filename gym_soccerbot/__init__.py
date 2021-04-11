@@ -1,4 +1,5 @@
 from gym.envs.registration import register
+from ray.tune.registry import register_env
 
 register(
     id='walk-forward-v0',
@@ -29,6 +30,8 @@ register(
     id='walk-forward-norm-v1',
     entry_point='gym_soccerbot.envs:WalkingForwardNormAgn',
 )
+
+register_env("walk-forward-norm-v1", lambda config: WalkingForwardNormAgn(config))
 
 import os
 

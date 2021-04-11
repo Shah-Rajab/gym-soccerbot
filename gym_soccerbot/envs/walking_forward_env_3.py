@@ -100,7 +100,7 @@ class Joints(enum.IntEnum):
 class WalkingForwardV3(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
-    DTYPE = np.float64
+    DTYPE = np.float32
 
     _POSE_DIM = 3
     _IMU_DIM = 6
@@ -151,6 +151,8 @@ class WalkingForwardV3(gym.Env):
 
     _joint_limit_low *= (-np.pi)
 
+    _AX_12_force = 1.6
+    _MX_28_force = 2.3
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
@@ -318,15 +320,25 @@ class WalkingForwardV3(gym.Env):
 
         # CLIP ACTIONS
         # action = np.clip(action, self._joint_limit_low, self._joint_limit_high)
-
+        # MX-28s
         p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
                                     controlMode=pb.POSITION_CONTROL,
-                                    jointIndices=list(range(0, self._JOINT_DIM, 1)),
-                                    targetPositions=action,
+                                    jointIndices=list(range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1)),
+                                    targetPositions=action[Joints.LEFT_LEG_1:Joints.HEAD_1],
                                     # targetVelocities=[2*(5/6)*np.pi]*self._JOINT_DIM,
                                     # positionGains=[4]*self._JOINT_DIM,
                                     # velocityGains=[0]*self._JOINT_DIM,
-                                    forces=[2.3]*self._JOINT_DIM)
+                                    forces=[self._MX_28_force] * (Joints.HEAD_1 - Joints.LEFT_LEG_1))
+        # AX-12s
+        p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
+                                    controlMode=pb.POSITION_CONTROL,
+                                    jointIndices=list(range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1)),
+                                    targetPositions=action[Joints.LEFT_ARM_1:Joints.LEFT_LEG_1],
+                                    # targetVelocities=[2*(5/6)*np.pi]*self._JOINT_DIM,
+                                    # positionGains=[4]*self._JOINT_DIM,
+                                    # velocityGains=[0]*self._JOINT_DIM,
+                                    forces=[self._AX_12_force] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1))
+
         # 120Hz - Step Simulation
         p.stepSimulation()
         p.stepSimulation()
@@ -427,8 +439,28 @@ class WalkingForwardV3(gym.Env):
         #pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         #standing_poses = [0] * (self._JOINT_DIM + 2)
         standing_poses = self._standing_poses(self.np_random)
-        for i in range(self._JOINT_DIM + 2):
+
+        # MX-28s:
+        for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1):
+            p.changeDynamics(self.soccerbotUid, i,
+                               jointLowerLimit=-self.joint_limit[i], jointUpperLimit=self.joint_limit[i],
+                               jointLimitForce=self._MX_28_force)
             p.resetJointState(self.soccerbotUid, i, standing_poses[i])
+        # AX-12s:
+        for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1):
+            p.changeDynamics(self.soccerbotUid, i,
+                               jointLowerLimit=-self.joint_limit[i], jointUpperLimit=self.joint_limit[i],
+                               jointLimitForce=self._AX_12_force)
+            p.resetJointState(self.soccerbotUid, i, standing_poses[i])
+        p.changeDynamics(self.soccerbotUid, Joints.HEAD_1,
+                           jointLowerLimit=-np.pi, jointUpperLimit=np.pi,
+                           jointLimitForce=self._AX_12_force)
+        p.resetJointState(self.soccerbotUid, Joints.HEAD_1, standing_poses[Joints.HEAD_1])
+        p.changeDynamics(self.soccerbotUid, Joints.HEAD_2,
+                           jointLowerLimit=-np.pi, jointUpperLimit=np.pi,
+                           jointLimitForce=self._AX_12_force)
+        p.resetJointState(self.soccerbotUid, Joints.HEAD_2, standing_poses[Joints.HEAD_2])
+
 
         # WARM UP SIMULATION
         if self.WARM_UP:
