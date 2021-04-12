@@ -274,7 +274,7 @@ class WalkingForwardV4(gym.Env):
 
         for i in range(len(locations)): # 5% chance of incorrect reading
             locations[i] *= np.sign(self.np_random.uniform(low= - self._FEET_FALSE_CHANCE,
-                                                           high=1 - (self._FEET_FALSE_CHANCE)), dtype=self.DTYPE)
+                                                           high=1. - (self._FEET_FALSE_CHANCE)), dtype=self.DTYPE)
         return np.array(locations)
 
     @classmethod

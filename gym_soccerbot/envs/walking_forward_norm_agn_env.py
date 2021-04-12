@@ -42,10 +42,12 @@ class WalkingForwardNormAgn(Env):
         observation = self.normalize(observation,
                                      self.env.observation_limit_low, self.env.observation_limit_high,
                                      self.observation_plus_range)
+        observation = np.clip(observation, -self.observation_plus_range, self.observation_plus_range)
         # reward = reward / float(self.reward_normal_factor)
         reward = self.normalize(reward,
                                 self.env.reward_limit_low, self.env.reward_limit_high,
                                 self.reward_plus_range)
+        reward = np.clip(reward, -self.reward_plus_range, self.reward_plus_range)
         return observation, reward, done, info
 
     def reset(self):
@@ -53,6 +55,7 @@ class WalkingForwardNormAgn(Env):
         observation = self.normalize(observation,
                                      self.env.observation_limit_low, self.env.observation_limit_high,
                                      self.observation_plus_range) * 0
+        observation = np.clip(observation, -self.observation_plus_range, self.observation_plus_range)
         return observation
 
     def render(self, **kwargs):
