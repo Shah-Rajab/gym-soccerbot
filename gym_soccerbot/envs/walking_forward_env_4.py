@@ -381,7 +381,7 @@ class WalkingForwardV4(gym.Env):
         lin_vel_xy = np.array(lin_vel, dtype=self.DTYPE)[0:2]
         distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
                             / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
-        velocity_forward_reward = np.dot(distance_unit_vec, lin_vel_xy) * 0.1
+        velocity_forward_reward = np.dot(distance_unit_vec, lin_vel_xy)
         velocity_downward_penalty = np.min(lin_vel[2], 0) # Only consider the negative component
         info = dict(end_cond="None")
         # Fall
