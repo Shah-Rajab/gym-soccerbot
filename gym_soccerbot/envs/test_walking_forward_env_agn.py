@@ -3,7 +3,7 @@ import gym
 import numpy as np
 from time import sleep
 
-env_name = "gym_soccerbot:walk-forward-v3"
+env_name = "gym_soccerbot:walk-forward-random-v1"
 env_id = 'gym_soccerbot:walk-forward-norm-v1'
 # env_id = "gym_soccerbot:walk-forward-v2"
 
@@ -92,14 +92,17 @@ def test_episode_render():
     done = False
     cum_reward = 0
     i = 0
+    MAX = 4096
+    act = np.ones((env.env._JOINT_DIM,)) * 10.
     while not done:
-        act = env.env._standing_poses()[:16]  #np.random.uniform(-np.pi, np.pi, env.action_space.shape)
-        observation, reward, done, info = env.step(np.zeros(16))
+        act *= -1.
+        # act = np.random.uniform(-np.pi, np.pi, env.action_space.shape)
+        observation, reward, done, info = env.step(act)
         cum_reward += reward
         print(f'------------reward: {reward:.5f}')
-        sleep(0.01)
+        sleep(0.1)
         i += 1
-        if i == 4096:
+        if i == MAX:
             break
     # print(f'observation: {observation}')
     # print(f'reward: {reward}')

@@ -15,7 +15,7 @@ class WalkingForwardNormAgn(Env):
 
 
         if "dtype" in kwargs.keys():
-            self.dtype = kwargs["dtype"]
+            self.dtype = eval(kwargs["dtype"])
         else:
             self.dtype = np.float32
 
