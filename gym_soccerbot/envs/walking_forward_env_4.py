@@ -348,18 +348,18 @@ class WalkingForwardV4(gym.Env):
                                     controlMode=pb.POSITION_CONTROL,
                                     jointIndices=list(range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1)),
                                     targetPositions=action[Joints.LEFT_LEG_1:Joints.HEAD_1],
-                                    targetVelocities=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
-                                    positionGains=[6.64] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
-                                    velocityGains=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
+                                    # targetVelocities=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
+                                    positionGains=[.02] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
+                                    # velocityGains=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
                                     forces=[self._MX_28_force] * (Joints.HEAD_1 - Joints.LEFT_LEG_1))
         # AX-12s
         p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
                                     controlMode=pb.POSITION_CONTROL,
                                     jointIndices=list(range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1)),
                                     targetPositions=action[Joints.LEFT_ARM_1:Joints.LEFT_LEG_1],
-                                    targetVelocities=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
-                                    positionGains=[6.64] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
-                                    velocityGains=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
+                                    # targetVelocities=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
+                                    positionGains=[.02] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
+                                    # velocityGains=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
                                     forces=[self._AX_12_force] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1))
 
         # 120Hz - Step Simulation
@@ -469,23 +469,31 @@ class WalkingForwardV4(gym.Env):
 
         # MX-28s:
         for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1):
+            '''
             p.changeDynamics(self.soccerbotUid, i,
                                jointLowerLimit=-self.joint_limit[i], jointUpperLimit=self.joint_limit[i],
                                jointLimitForce=self._MX_28_force)
+            '''
             p.resetJointState(self.soccerbotUid, i, standing_poses[i])
         # AX-12s:
         for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1):
+            '''
             p.changeDynamics(self.soccerbotUid, i,
                                jointLowerLimit=-self.joint_limit[i], jointUpperLimit=self.joint_limit[i],
                                jointLimitForce=self._AX_12_force)
+            '''
             p.resetJointState(self.soccerbotUid, i, standing_poses[i])
+        '''
         p.changeDynamics(self.soccerbotUid, Joints.HEAD_1,
                            jointLowerLimit=-np.pi, jointUpperLimit=np.pi,
                            jointLimitForce=self._AX_12_force)
+        '''
         p.resetJointState(self.soccerbotUid, Joints.HEAD_1, standing_poses[Joints.HEAD_1])
+        '''
         p.changeDynamics(self.soccerbotUid, Joints.HEAD_2,
                            jointLowerLimit=-np.pi, jointUpperLimit=np.pi,
                            jointLimitForce=self._AX_12_force)
+        '''
         p.resetJointState(self.soccerbotUid, Joints.HEAD_2, standing_poses[Joints.HEAD_2])
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 from gym import spaces, Env
 from gym.envs.registration import spec, load
+from time import sleep
 
 
 class WalkingForwardNormAgn(Env):
@@ -59,6 +60,7 @@ class WalkingForwardNormAgn(Env):
         return observation
 
     def render(self, **kwargs):
+        sleep(0.0041)
         return self.env.render(**kwargs)
 
     def normalize(self, actual, low_end, high_end, scale):
