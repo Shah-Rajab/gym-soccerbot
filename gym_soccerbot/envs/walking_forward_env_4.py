@@ -153,6 +153,8 @@ class WalkingForwardV4(gym.Env):
 
     _AX_12_force = 1.5
     _MX_28_force = 2.5
+    _AX_12_velocity = (59 / 60) * 2 * np.pi
+    _MX_28_velocity = (55 / 60) * 2 * np.pi
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
@@ -343,25 +345,31 @@ class WalkingForwardV4(gym.Env):
 
         # CLIP ACTIONS
         # action = np.clip(action, self._joint_limit_low, self._joint_limit_high)
-        # MX-28s
-        p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
-                                    controlMode=pb.POSITION_CONTROL,
-                                    jointIndices=list(range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1)),
-                                    targetPositions=action[Joints.LEFT_LEG_1:Joints.HEAD_1],
-                                    # targetVelocities=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
-                                    positionGains=[.02] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
-                                    # velocityGains=[0.] * (Joints.HEAD_1 - Joints.LEFT_LEG_1),
-                                    forces=[self._MX_28_force] * (Joints.HEAD_1 - Joints.LEFT_LEG_1))
-        # AX-12s
-        p.setJointMotorControlArray(bodyIndex=self.soccerbotUid,
-                                    controlMode=pb.POSITION_CONTROL,
-                                    jointIndices=list(range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1)),
-                                    targetPositions=action[Joints.LEFT_ARM_1:Joints.LEFT_LEG_1],
-                                    # targetVelocities=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
-                                    positionGains=[.02] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
-                                    # velocityGains=[0.] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1),
-                                    forces=[self._AX_12_force] * (Joints.LEFT_LEG_1 - Joints.LEFT_ARM_1))
 
+        # MX-28s
+        for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1):
+            p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
+                                    controlMode=pb.POSITION_CONTROL,
+                                    jointIndex=i,
+                                    targetPosition=action[i],
+                                    # targetVelocity=self._MX_28_velocity,
+                                    positionGain=6.64,
+                                    velocityGain=0.,
+                                    maxVelocity=self._MX_28_velocity,
+                                    force=self._MX_28_force,
+                                    )
+        # AX-12s
+        for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1):
+            p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
+                                    controlMode=pb.POSITION_CONTROL,
+                                    jointIndex=i,
+                                    targetPosition=action[i],
+                                    # targetVelocity=self._AX_12_velocity,
+                                    positionGain=4.,
+                                    velocityGain=0.,
+                                    maxVelocity=self._AX_12_velocity,
+                                    force=self._AX_12_force,
+                                    )
         # 120Hz - Step Simulation
         p.stepSimulation()
         p.stepSimulation()
