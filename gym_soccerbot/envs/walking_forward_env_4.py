@@ -152,9 +152,9 @@ class WalkingForwardV4(gym.Env):
     _joint_limit_low *= (-np.pi)
 
     _AX_12_force = 1.5
-    _MX_28_force = 2.5
+    _MX_28_force = 6.0 # 2.5
     _AX_12_velocity = (59 / 60) * 2 * np.pi
-    _MX_28_velocity = (55 / 60) * 2 * np.pi
+    _MX_28_velocity = 2 * np.pi # (55 / 60) * 2 * np.pi
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
@@ -390,7 +390,7 @@ class WalkingForwardV4(gym.Env):
         distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
                             / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
         velocity_forward_reward = np.dot(distance_unit_vec, lin_vel_xy)
-        velocity_downward_penalty = np.min(lin_vel[2], 0) # Only consider the negative component
+        # velocity_downward_penalty = np.min(lin_vel[2], 0) # Only consider the negative component
         info = dict(end_cond="None")
         # Fall
         if self._global_pos()[2] < 0.22: #HARDCODE (self._STANDING_HEIGHT / 2): # check z component
@@ -410,7 +410,7 @@ class WalkingForwardV4(gym.Env):
         # Normal case
         else:
             done = False
-            reward = velocity_forward_reward + velocity_downward_penalty
+            reward = velocity_forward_reward # + velocity_downward_penalty
         return observation, reward, done, info
 
     def reset(self):

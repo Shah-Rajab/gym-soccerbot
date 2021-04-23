@@ -34,7 +34,7 @@ class WalkingForwardNormAgn(Env):
 
     def step(self, action):
         action = self.denormalize(action,
-                                  self.env._joint_limit_low, self.env._joint_limit_high,
+                                  self.env.action_space.low, self.env.action_space.high,
                                   self.action_plus_range)
         # assert np.logical_and.reduce(np.less_equal(action, self.joint_limit_high)), "Joint action max limit exceeded"
         # assert np.logical_and.reduce(np.greater_equal(action, self.joint_limit_low)), "Joint action min limit exceeded"
@@ -55,12 +55,11 @@ class WalkingForwardNormAgn(Env):
         observation = self.env.reset()
         observation = self.normalize(observation,
                                      self.env.observation_limit_low, self.env.observation_limit_high,
-                                     self.observation_plus_range) * 0
+                                     self.observation_plus_range)
         observation = np.clip(observation, -self.observation_plus_range, self.observation_plus_range)
         return observation
 
     def render(self, **kwargs):
-        sleep(0.0041)
         return self.env.render(**kwargs)
 
     def normalize(self, actual, low_end, high_end, scale):

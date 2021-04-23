@@ -32,6 +32,11 @@ register(
 )
 
 register(
+    id='walk-forward-velocity-v1',
+    entry_point='gym_soccerbot.envs:WalkingForwardV5',
+)
+
+register(
     id='walk-forward-norm-v1',
     entry_point='gym_soccerbot.envs:WalkingForwardNormAgn',
 )
