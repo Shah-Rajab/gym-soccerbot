@@ -158,7 +158,7 @@ class WalkingForwardV5(gym.Env):
     _MX_28_force = 2.5
     _AX_12_velocity = (59 / 60) * 2 * np.pi
     _MX_28_velocity = 2 * np.pi
-    _ENABLE_HANDS = True
+    _ENABLE_HANDS = False
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
@@ -457,7 +457,6 @@ class WalkingForwardV5(gym.Env):
         distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
                             / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
         velocity_forward_reward = np.dot(distance_unit_vec, lin_vel_xy)
-        velocity_feet
         # velocity_downward_penalty = np.min(lin_vel[2], 0) # Only consider the negative component
         info = dict(end_cond="None")
         # Fall
@@ -501,7 +500,6 @@ class WalkingForwardV5(gym.Env):
                                            basePosition=[0, 0, self._STANDING_HEIGHT],
                                            baseOrientation=[0., 0., 0., 1.],
                                            flags=pb.URDF_USE_INERTIA_FROM_FILE
-                                                 | pb.URDF_USE_MATERIAL_COLORS_FROM_MTL
                                                  | pb.URDF_USE_SELF_COLLISION
                                                  | pb.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
                                            )

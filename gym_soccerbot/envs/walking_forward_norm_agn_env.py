@@ -23,11 +23,11 @@ class WalkingForwardNormAgn(Env):
         # Observation Space
         self.observation_plus_range = observation_plus_range
         self.observation_space = spaces.Box(low=-self.observation_plus_range, high=self.observation_plus_range,
-                                            shape=(self.env._OBSERVATION_DIM, ) , dtype=self.dtype)
+                                            shape=self.env.observation_space.shape , dtype=self.dtype)
         # Action Space
         self.action_plus_range = action_plus_range
         self.action_space = spaces.Box(low=-self.action_plus_range, high=self.action_plus_range,
-                                       shape=(self.env._JOINT_DIM, ), dtype=self.dtype)
+                                       shape=self.env.action_space.shape, dtype=self.dtype)
         # Reward
         self.reward_plus_range = self.dtype(reward_plus_range)
         self.reward_range = [-reward_plus_range, reward_plus_range]
@@ -60,6 +60,7 @@ class WalkingForwardNormAgn(Env):
         return observation
 
     def render(self, **kwargs):
+        sleep(0.0041)
         return self.env.render(**kwargs)
 
     def normalize(self, actual, low_end, high_end, scale):

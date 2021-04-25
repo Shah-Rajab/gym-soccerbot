@@ -116,6 +116,7 @@ def test_episode_render():
         message["data"] = [float(x) for x in message["data"]]
         raw = json.dumps(message)
         sock.sendto(raw.encode('utf-8'), (UDP_IP, UDP_PORT))
+        sleep(0.041)
         i += 1
         # if i == MAX:
             # break
