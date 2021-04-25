@@ -168,11 +168,11 @@ class WalkingForwardV5(gym.Env):
     def joint_limit_low_val(cls):
         return cls._joint_limit_low.copy()
 
-    _STANDING_HEIGHT = 0.33 # 0.29 # 0.32
+    _STANDING_HEIGHT = 0.29 # 0.32
     _GRAVITY_VECTOR = [0, 0, -9.81]
     _CLOSENESS = 0.05 # in meters presumably
-    _MAX_ANG_VEL = 250.  # MPU6050
-    _MAX_LIN_ACC = 2.  # MPU6050
+    _MAX_ANG_VEL = 500.  # LSM6DSOX
+    _MAX_LIN_ACC = 2. * 9.81 # LSM6DSOX
     _CONTROL_MODE = Control_Mode.VELOCITY #Control_Mode.POSITION
     # Action Space
     if _CONTROL_MODE == Control_Mode.VELOCITY:
@@ -223,13 +223,13 @@ class WalkingForwardV5(gym.Env):
     _render_width = 320
 
     # IMU NOISE
-    _IMU_LIN_STDDEV_BIAS = 0.02 * _MAX_LIN_ACC
-    _IMU_ANG_STDDEV_BIAS = 0.02 * _MAX_ANG_VEL
-    _IMU_LIN_STDDEV = 0.03 * _MAX_LIN_ACC
-    _IMU_ANG_STDDEV = 0.03 * _MAX_ANG_VEL
+    _IMU_LIN_STDDEV_BIAS = 0. # 0.02 * _MAX_LIN_ACC
+    _IMU_ANG_STDDEV_BIAS = 0. #  0.02 * _MAX_ANG_VEL
+    _IMU_LIN_STDDEV = 0.00203 * _MAX_LIN_ACC
+    _IMU_ANG_STDDEV = 0.00804 * _MAX_ANG_VEL
 
     # FEET
-    _FEET_FALSE_CHANCE = 0.05
+    _FEET_FALSE_CHANCE = 0.01
 
     # Joint angle noise
     _JOIN_ANGLE_STDDEV = np.pi / 2048
@@ -457,6 +457,7 @@ class WalkingForwardV5(gym.Env):
         distance_unit_vec = (self.goal_xy - self._global_pos()[0:2]) \
                             / np.linalg.norm(self.goal_xy - self._global_pos()[0:2])
         velocity_forward_reward = np.dot(distance_unit_vec, lin_vel_xy)
+        velocity_feet
         # velocity_downward_penalty = np.min(lin_vel[2], 0) # Only consider the negative component
         info = dict(end_cond="None")
         # Fall
@@ -540,8 +541,8 @@ class WalkingForwardV5(gym.Env):
         #p.resetJointStates(self.soccerbotUid, list(range(0, 18, 1)), 0)
         #pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
         #standing_poses = [0] * (self._JOINT_DIM + 2)
-        # standing_poses = self._standing_poses(self.np_random)
-        standing_poses = self._standing_poses()
+        standing_poses = self._standing_poses(self.np_random)
+        # standing_poses = self._standing_poses()
 
         # MX-28s:
         for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1):
