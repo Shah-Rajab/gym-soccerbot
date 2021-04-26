@@ -158,7 +158,7 @@ class WalkingForwardV5(gym.Env):
     _MX_28_force = 2.5
     _AX_12_velocity = (59 / 60) * 2 * np.pi
     _MX_28_velocity = 2 * np.pi
-    _ENABLE_HANDS = False
+    _ENABLE_HANDS = True
     #### End of Joint Limits HARD CODE
     @classmethod
     def joint_limit_high_val(cls):
@@ -309,7 +309,7 @@ class WalkingForwardV5(gym.Env):
         return np.array(locations)
 
     @classmethod
-    def _standing_poses(cls, np_random=None, scale=0.6):
+    def _standing_poses(cls, np_random=None, scale=0.1):
         standing_poses = [0.] * (cls._JOINT_DIM + 2)
         standing_poses[Joints.RIGHT_LEG_1] = 0.0
         standing_poses[Joints.RIGHT_LEG_2] = 0.05
@@ -494,7 +494,7 @@ class WalkingForwardV5(gym.Env):
             p.resetSimulation()
 
             urdfBotPath = gym_soccerbot.getDataPath()
-            self.soccerbotUid = p.loadURDF(os.path.join(urdfBotPath, "soccer_description/models/soccerbot_stl.urdf"),
+            self.soccerbotUid = p.loadURDF(os.path.join(urdfBotPath, "soccer_description/models/soccerbot_stl.urdf"), # "/home/shahryar/hdd/catkin_ws/src/soccer_ws/soccer_description/models/soccerbot_stl.urdf"
                                            useFixedBase=False,
                                            useMaximalCoordinates=False,
                                            basePosition=[0, 0, self._STANDING_HEIGHT],
