@@ -9,7 +9,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 9870
 
 # env_name = "gym_soccerbot:walk-forward-random-v1"
-env_name = 'gym_soccerbot:walk-forward-velocity-v1'
+env_name = 'gym_soccerbot:walk-forward-velocity-v2'
 env_id = 'gym_soccerbot:walk-forward-norm-v1'
 # env_id = "gym_soccerbot:walk-forward-v2"
 '''
@@ -112,7 +112,7 @@ def test_episode_render():
         observation, reward, done, info = env.step(act)
         cum_reward += reward
         print(f'------------reward: {reward:.5f}')
-        message = dict(timestamp=i * (1. / 120.), data=list(observation[:12]))
+        message = dict(timestamp=i * (1. / 120.), data=list(observation[16:32]))
         message["data"] = [float(x) for x in message["data"]]
         raw = json.dumps(message)
         sock.sendto(raw.encode('utf-8'), (UDP_IP, UDP_PORT))
