@@ -101,7 +101,7 @@ class WalkingForwardV1(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
 
-    def __init__(self, renders=False, dtype=np.float64, warm_up=True, reward_scale=1e2, goal=[1, 0]):
+    def __init__(self, renders=False, dtype=np.float64, warm_up=True, reward_scale=1e2, goal=(1, 0)):
         self.dtype = dtype
         self.reward_scale = reward_scale
 

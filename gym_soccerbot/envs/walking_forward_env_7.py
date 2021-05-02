@@ -104,7 +104,7 @@ class Control_Mode(enum.IntEnum):
     VELOCITY = 2
 
 
-class WalkingForwardV6(gym.Env):
+class WalkingForwardV7(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
     DTYPE = np.float32
@@ -306,6 +306,8 @@ class WalkingForwardV6(gym.Env):
         _, orn = p.getBasePositionAndOrientation(self.soccerbotUid)
         return np.array(orn, dtype=self.DTYPE)
 
+    def _synthetic_height(self):
+
     def _feet(self):
         """
         Checks if 4 corners of the each feet are in contact with ground
@@ -336,9 +338,11 @@ class WalkingForwardV6(gym.Env):
             index = np.signbit(np.matmul(left_tr, point[5] - left_center))[0:2]
             locations[index[1] + (index[0] * 2) + 4] = 1.
 
+        '''
         for i in range(len(locations)):  # 5% chance of incorrect reading
             locations[i] *= np.sign(self.np_random.uniform(low=- self._FEET_FALSE_CHANCE,
                                                            high=1 - (self._FEET_FALSE_CHANCE)), dtype=self.DTYPE)
+        '''
         return np.array(locations)
 
     @classmethod
@@ -414,62 +418,37 @@ class WalkingForwardV6(gym.Env):
         # CLIP ACTIONS
         # action = np.clip(action, self._joint_limit_low, self._joint_limit_high)
         # MX-28s
-        if self._CONTROL_MODE == Control_Mode.POSITION:
-            for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1):
-                p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
-                                        controlMode=pb.POSITION_CONTROL,
-                                        jointIndex=i,
-                                        targetPosition=action[i - self._DIM_SUB_HANDS],
-                                        targetVelocity=self._MX_28_velocity,
-                                        positionGain=6.64,
-                                        velocityGain=1.,
-                                        maxVelocity=self._MX_28_velocity,
-                                        force=self._MX_28_force,
-                                        )
-            if self._ENABLE_HANDS:
-                # AX-12s
-                for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1):
-                    p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
-                                            controlMode=pb.POSITION_CONTROL,
-                                            jointIndex=i,
-                                            targetPosition=action[i],
-                                            # targetVelocity=self._AX_12_velocity,
-                                            # positionGain=4.,
-                                            # velocityGain=0.,
-                                            maxVelocity=self._AX_12_velocity,
-                                            force=self._AX_12_force,
-                                            )
-        elif self._CONTROL_MODE == Control_Mode.VELOCITY:
-            for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1):
+
+        for i in range(Joints.LEFT_LEG_1, Joints.HEAD_1, 1):
+            joint_cur_pos = p.getJointState(self.soccerbotUid, i)[0]
+            velocity = action[i - self._DIM_SUB_HANDS]
+            velocity = velocity if joint_cur_pos < self._joint_limit_high[i] else -self._MX_28_velocity
+            velocity = velocity if joint_cur_pos > self._joint_limit_low[i] else self._MX_28_velocity
+            gain = 0.78 if velocity == action[i - self._DIM_SUB_HANDS] else 0.78
+            p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
+                                    controlMode=pb.VELOCITY_CONTROL,
+                                    jointIndex=i,
+                                    targetVelocity=velocity,
+                                    velocityGain=gain,
+                                    maxVelocity=self._MX_28_velocity,
+                                    force=self._MX_28_force,
+                                    )
+        if self._ENABLE_HANDS:
+            # AX-12s
+            for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1):
                 joint_cur_pos = p.getJointState(self.soccerbotUid, i)[0]
-                velocity = action[i - self._DIM_SUB_HANDS]
+                velocity = action[i]
                 velocity = velocity if joint_cur_pos < self._joint_limit_high[i] else -self._MX_28_velocity
                 velocity = velocity if joint_cur_pos > self._joint_limit_low[i] else self._MX_28_velocity
-                gain = 0.78 if velocity == action[i - self._DIM_SUB_HANDS] else 0.78
+                gain = 0.78 if velocity == action[i] else 0.78
                 p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
                                         controlMode=pb.VELOCITY_CONTROL,
                                         jointIndex=i,
                                         targetVelocity=velocity,
                                         velocityGain=gain,
-                                        maxVelocity=self._MX_28_velocity,
-                                        force=self._MX_28_force,
+                                        maxVelocity=self._AX_12_velocity,
+                                        force=self._AX_12_force,
                                         )
-            if self._ENABLE_HANDS:
-                # AX-12s
-                for i in range(Joints.LEFT_ARM_1, Joints.LEFT_LEG_1, 1):
-                    joint_cur_pos = p.getJointState(self.soccerbotUid, i)[0]
-                    velocity = action[i]
-                    velocity = velocity if joint_cur_pos < self._joint_limit_high[i] else -self._MX_28_velocity
-                    velocity = velocity if joint_cur_pos > self._joint_limit_low[i] else self._MX_28_velocity
-                    gain = 0.78 if velocity == action[i] else 0.78
-                    p.setJointMotorControl2(bodyIndex=self.soccerbotUid,
-                                            controlMode=pb.VELOCITY_CONTROL,
-                                            jointIndex=i,
-                                            targetVelocity=velocity,
-                                            velocityGain=gain,
-                                            maxVelocity=self._AX_12_velocity,
-                                            force=self._AX_12_force,
-                                            )
 
     def step(self, action):
         p = self._p
@@ -508,6 +487,11 @@ class WalkingForwardV6(gym.Env):
             done = True
             reward = 1e-1
             info['end_cond'] = "Goal Reached"
+        # Both feet off the ground
+        elif np.sum(self._feet()[0:4]) < -0.5 and np.sum(self._feet()[4:8]) < -0.5:
+            done = True
+            reward = -1e-1
+            info['end_cond'] = "Feet off"
         # Out of Bound
         elif np.linalg.norm(self._global_pos()[0:2] - self.goal_xy) > (
                 2 * np.linalg.norm(self.goal_xy)):  # out of bound

@@ -234,7 +234,7 @@ class WalkingForwardV5(gym.Env):
     # Joint angle noise
     _JOIN_ANGLE_STDDEV = np.pi / 2048
 
-    def __init__(self, renders=False, warm_up=False, goal=[1, 0], seed=42):
+    def __init__(self, renders=False, warm_up=False, goal=(1, 0), seed=42):
         # start the bullet physics server
         self._renders = renders
         self._physics_client_id = -1

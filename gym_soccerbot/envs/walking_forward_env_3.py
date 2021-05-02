@@ -188,7 +188,7 @@ class WalkingForwardV3(gym.Env):
     # MISC
     _render_height = 200
     _render_width = 320
-    def __init__(self, renders=False, warm_up=False, goal=[1, 0], seed=42):
+    def __init__(self, renders=False, warm_up=False, goal=(1, 0), seed=42):
         # start the bullet physics server
         self._renders = renders
         self._physics_client_id = -1
