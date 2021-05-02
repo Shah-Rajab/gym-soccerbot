@@ -307,6 +307,8 @@ class WalkingForwardV7(gym.Env):
         return np.array(orn, dtype=self.DTYPE)
 
     def _synthetic_height(self):
+        raise NotImplementedError
+
 
     def _feet(self):
         """
