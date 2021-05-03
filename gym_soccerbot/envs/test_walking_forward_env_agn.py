@@ -9,7 +9,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 9870
 
 # env_name = "gym_soccerbot:walk-forward-random-v1"
-env_name = 'gym_soccerbot:walk-forward-velocity-v2'
+env_name = 'gym_soccerbot:walk-forward-velocity-v3'
 env_id = 'gym_soccerbot:walk-forward-norm-v1'
 # env_id = "gym_soccerbot:walk-forward-v2"
 '''
