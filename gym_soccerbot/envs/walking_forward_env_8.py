@@ -315,7 +315,7 @@ class WalkingForwardV8(gym.Env):
         cos = np.dot(d2_vect, distance_unit_vec)
         sin = np.linalg.norm(np.cross(distance_unit_vec, d2_vect))
         vec = np.array([cos, sin], dtype=self.DTYPE)
-        print(f'Orn: {vec}')
+        # print(f'Orn: {vec}')
         return vec
 
     def _feet(self):
